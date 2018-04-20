@@ -12,6 +12,8 @@ from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import nn_ops
 from tensorflow.python.platform import tf_logging as logging
 
+from tensorflow.python.ops.rnn_cell_impl import LSTMStateTuple
+
 
 _BIAS_VARIABLE_NAME = "bias"
 _WEIGHTS_VARIABLE_NAME = "kernel"
@@ -49,7 +51,7 @@ class StateTransitionLSTMCell(rnn_cell_impl.LayerRNNCell):
       When restoring from CudnnLSTM-trained checkpoints, must use
       `CudnnCompatibleLSTMCell` instead.
     """
-    super(BasicLSTMCell, self).__init__(_reuse=reuse, name=name)
+    super(StateTransitionLSTMCell, self).__init__(_reuse=reuse, name=name)
     if not state_is_tuple:
       logging.warn("%s: Using a concatenated state is slower and will soon be "
                    "deprecated.  Use state_is_tuple=True.", self)
@@ -142,7 +144,7 @@ class StateTransitionLSTMCell(rnn_cell_impl.LayerRNNCell):
     def transition(inputs, l):
         mat = math_ops.matmul(inputs, self._state_transition_kernels[l])
         z = nn_ops.bias_add(mat, self._state_transition_biases[l])
-        a = self._activation(z)
+        a = self._transition_activation(z)
         return a
 
     new_h = out_h
