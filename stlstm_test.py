@@ -57,9 +57,7 @@ class STLSTMTest(test.TestCase):
 
             init_state0 = cell_0layer.zero_state(batch_size, dtype=dtypes.float32)
             init_state1 = cell_1layer.zero_state(batch_size, dtype=dtypes.float32)
-            # TODO: assert zero states aren't impacted by # st layers
 
-            # NOTE: 1-layer transition with identity and 0-bias should equal 0-layer (no transition)
             inputs = random_ops.random_uniform([batch_size, 5])
             h0, st0 = cell_0layer(inputs, init_state0)
             h1, st1 = cell_1layer(inputs, init_state1)
@@ -72,9 +70,24 @@ class STLSTMTest(test.TestCase):
             self.assertAllEqual(out0, newst0[1])
             # NOTE: assert the same for 1 layer st with an identity kernel and zero biases
             self.assertAllEqual(out1, newst1[1])
-            # NOTE: assert that 0 layer and 1 layer new hidden states are the same
-            #self.assertAllEqual(newst0[1], newst1[1])
 
+    def test_cell_residual(self, *args, **kwargs):
+            num_units = 3
+            # test residual and bias
+            # NOTE: test that 2 layer identity kernel with ones biases, new hidden state = output + output + 2
+            with self.test_session() as sess:
+                cell = stlstm.STLSTMCell(num_units, st_num_layers=2,
+                                         st_kernel_initializer=init_ops.identity_initializer(),
+                                         st_bias_initializer=init_ops.constant_initializer(1.),
+                                         st_residual=True)
+                init_state = cell.zero_state(2, dtype=dtypes.float32)
+                inputs = random_ops.random_uniform([2, 5])
+                h, st = cell(inputs, init_state)
+                variables.global_variables_initializer().run()
+
+                out, newst = sess.run([h, st])
+
+                self.assertAllClose(2.*out+2, newst[1])
 
 
 if __name__ == '__main__':
