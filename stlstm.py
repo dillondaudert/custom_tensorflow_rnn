@@ -108,14 +108,14 @@ class STLSTMCell(rnn_cell_impl.LayerRNNCell):
             initializer=init_ops.zeros_initializer(dtype=self.dtype))
 
         self._st_kernels = [self.add_variable("st_kernel_%d" % i,
-                                                            shape=[self._num_units, self._num_units],
-                                                            initializer=self._st_kernel_initializer,
-                                                            trainable=True) for i in range(self._st_num_layers)]
+                                              shape=[self._num_units, self._num_units],
+                                              initializer=self._st_kernel_initializer,
+                                              trainable=True) for i in range(self._st_num_layers)]
         if self._use_st_bias:
             self._st_biases = [self.add_variable("st_bias_%d" % i,
-                                                               shape=[self._num_units,],
-                                                               initializer=self._st_bias_initializer,
-                                                               trainable=True) for i in range(self._st_num_layers)]
+                                                 shape=[self._num_units,],
+                                                 initializer=self._st_bias_initializer,
+                                                 trainable=True) for i in range(self._st_num_layers)]
         else:
             self._st_biases = None
 
