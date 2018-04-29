@@ -21,11 +21,12 @@ _WEIGHTS_VARIABLE_NAME = "kernel"
 class STLSTMCell(rnn_cell_impl.LayerRNNCell):
     _st_kernels=None
     _st_biases=None
+    _st_activation=None
     """State transition LSTM, built on top of BasicLSTMCell"""
     def __init__(self, num_units, forget_bias=1.0, st_activation=None,
                  use_st_bias=True, st_kernel_initializer=None,
                  st_bias_initializer=init_ops.zeros_initializer(),
-                 st_residual=True, st_num_layers=2,
+                 st_residual=False, st_num_layers=2,
                  state_is_tuple=True, activation=None, reuse=None,
                  dtype=dtypes.float32, name=None):
         """Initialize the state transition LSTM cell.
@@ -36,7 +37,7 @@ class STLSTMCell(rnn_cell_impl.LayerRNNCell):
             Must set to `0.0` manually when restoring from CudnnLSTM-trained
             checkpoints.
           st_activation: an activation function for the transition network
-            layers
+            layers. Default: linear
           use_st_bias: use biases for the transition network layers.
             Default: True
           st_kernel_initializer: an initializer for the fully-connected
@@ -45,7 +46,7 @@ class STLSTMCell(rnn_cell_impl.LayerRNNCell):
           st_bias_initializer: an initializer for the transition biases.
             Default: zeros_initializer
           st_residual: bool, whether to use residual connections in the
-            transition network
+            transition network. Default: `False`
           st_num_layers: int, the number of layers for the state
             transition network
           state_is_tuple: If True, accepted and returned states are 2-tuples of
@@ -73,7 +74,7 @@ class STLSTMCell(rnn_cell_impl.LayerRNNCell):
         self._forget_bias = forget_bias
         self._state_is_tuple = state_is_tuple
         self._activation = activation or math_ops.tanh
-        self._st_activation = activation or nn_ops.relu
+        self._st_activation = st_activation
         self._use_st_bias = use_st_bias
         self._st_kernel_initializer = st_kernel_initializer
         self._st_bias_initializer = st_bias_initializer
