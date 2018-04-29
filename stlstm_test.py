@@ -18,8 +18,8 @@ class STLSTMTest(test.TestCase):
 
         with self.test_session() as sess:
             cell = stlstm.STLSTMCell(num_units,
-                                     transition_kernel_initializer=st_kernel_initializer,
-                                     transition_num_layers=num_layers)
+                                     st_kernel_initializer=st_kernel_initializer,
+                                     st_num_layers=num_layers)
             cell.build(inputs_shape)
             # check cell._st_kernels/biases
             # NOTE: check length of new variable arrays

@@ -20,10 +20,10 @@ _WEIGHTS_VARIABLE_NAME = "kernel"
 
 class STLSTMCell(rnn_cell_impl.LayerRNNCell):
     """State transition LSTM, built on top of BasicLSTMCell"""
-    def __init__(self, num_units, forget_bias=1.0, transition_activation=None,
-                 use_transition_bias=True, transition_kernel_initializer=None,
-                 transition_bias_initializer=init_ops.zeros_initializer(),
-                 transition_residual=True, transition_num_layers=2,
+    def __init__(self, num_units, forget_bias=1.0, st_activation=None,
+                 use_st_bias=True, st_kernel_initializer=None,
+                 st_bias_initializer=init_ops.zeros_initializer(),
+                 st_residual=True, st_num_layers=2,
                  state_is_tuple=True, activation=None, reuse=None,
                  dtype=dtypes.float32, name=None):
         """Initialize the state transition LSTM cell.
@@ -33,18 +33,18 @@ class STLSTMCell(rnn_cell_impl.LayerRNNCell):
           forget_bias: float, The bias added to forget gates (see above).
             Must set to `0.0` manually when restoring from CudnnLSTM-trained
             checkpoints.
-          transition_activation: an activation function for the transition network
+          st_activation: an activation function for the transition network
             layers
-          use_transition_bias: use biases for the transition network layers.
+          use_st_bias: use biases for the transition network layers.
             Default: True
-          transition_kernel_initializer: an initializer for the fully-connected
+          st_kernel_initializer: an initializer for the fully-connected
             transition kernels. If `None` (default), weights are initialized
             using the default initializer used by `tf.get_variable`
-          transition_bias_initializer: an initializer for the transition biases.
+          st_bias_initializer: an initializer for the transition biases.
             Default: zeros_initializer
-          transition_residual: bool, whether to use residual connections in the
+          st_residual: bool, whether to use residual connections in the
             transition network
-          transition_num_layers: int, the number of layers for the state
+          st_num_layers: int, the number of layers for the state
             transition network
           state_is_tuple: If True, accepted and returned states are 2-tuples of
             the `c_state` and `m_state`.  If False, they are concatenated
@@ -71,12 +71,12 @@ class STLSTMCell(rnn_cell_impl.LayerRNNCell):
         self._forget_bias = forget_bias
         self._state_is_tuple = state_is_tuple
         self._activation = activation or math_ops.tanh
-        self._transition_activation = activation or nn_ops.relu
-        self._use_transition_bias = use_transition_bias
-        self._transition_kernel_initializer = transition_kernel_initializer
-        self._transition_bias_initializer = transition_bias_initializer
-        self._transition_residual = transition_residual
-        self._transition_num_layers = transition_num_layers
+        self._st_activation = activation or nn_ops.relu
+        self._use_st_bias = use_st_bias
+        self._st_kernel_initializer = st_kernel_initializer
+        self._st_bias_initializer = st_bias_initializer
+        self._st_residual = st_residual
+        self._st_num_layers = st_num_layers
 
     @property
     def dtype(self):
@@ -109,13 +109,13 @@ class STLSTMCell(rnn_cell_impl.LayerRNNCell):
 
         self._st_kernels = [self.add_variable("st_kernel_%d" % i,
                                                             shape=[self._num_units, self._num_units],
-                                                            initializer=self._transition_kernel_initializer,
-                                                            trainable=True) for i in range(self._transition_num_layers)]
-        if self._use_transition_bias:
+                                                            initializer=self._st_kernel_initializer,
+                                                            trainable=True) for i in range(self._st_num_layers)]
+        if self._use_st_bias:
             self._st_biases = [self.add_variable("st_bias_%d" % i,
                                                                shape=[self._num_units,],
-                                                               initializer=self._transition_bias_initializer,
-                                                               trainable=True) for i in range(self._transition_num_layers)]
+                                                               initializer=self._st_bias_initializer,
+                                                               trainable=True) for i in range(self._st_num_layers)]
         else:
             self._st_biases = None
 
@@ -164,17 +164,17 @@ class STLSTMCell(rnn_cell_impl.LayerRNNCell):
         def transition(inputs, l):
             """Transform the hidden state via a fully-connected transition layer."""
             outputs = math_ops.matmul(inputs, self._st_kernels[l])
-            if self._use_transition_bias:
+            if self._use_st_bias:
                 outputs = nn_ops.bias_add(outputs, self._st_biases[l])
-            if self._transition_activation is not None:
-                outputs = self._transition_activation(outputs)
+            if self._st_activation is not None:
+                outputs = self._st_activation(outputs)
             return outputs
 
         new_h = out_h
-        for l in range(self._transition_num_layers):
+        for l in range(self._st_num_layers):
             new_h = transition(new_h, l)
 
-        if self._transition_residual:
+        if self._st_residual:
             new_h = add(out_h, new_h)
 
         if self._state_is_tuple:
