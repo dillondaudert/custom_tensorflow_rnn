@@ -18,7 +18,7 @@ from tensorflow.python.ops.rnn_cell_impl import LSTMStateTuple
 _BIAS_VARIABLE_NAME = "bias"
 _WEIGHTS_VARIABLE_NAME = "kernel"
 
-class StateTransitionLSTMCell(rnn_cell_impl.LayerRNNCell):
+class STLSTMCell(rnn_cell_impl.LayerRNNCell):
     """State transition LSTM, built on top of BasicLSTMCell"""
     def __init__(self, num_units, forget_bias=1.0, transition_activation=None,
                  use_transition_bias=True, transition_kernel_initializer=None,
@@ -58,7 +58,7 @@ class StateTransitionLSTMCell(rnn_cell_impl.LayerRNNCell):
             share weights, but to avoid mistakes we require reuse=True in such
             cases.
         """
-        super(StateTransitionLSTMCell, self).__init__(_reuse=reuse, name=name)
+        super(STLSTMCell, self).__init__(_reuse=reuse, name=name)
         if not state_is_tuple:
           logging.warn("%s: Using a concatenated state is slower and will soon be "
                        "deprecated.  Use state_is_tuple=True.", self)
@@ -107,17 +107,17 @@ class StateTransitionLSTMCell(rnn_cell_impl.LayerRNNCell):
             shape=[4 * self._num_units],
             initializer=init_ops.zeros_initializer(dtype=self.dtype))
 
-        self._state_transition_kernels = [self.add_variable("state_transition_kernel_%d" % i,
+        self._st_kernels = [self.add_variable("st_kernel_%d" % i,
                                                             shape=[self._num_units, self._num_units],
                                                             initializer=self._transition_kernel_initializer,
                                                             trainable=True) for i in range(self._transition_num_layers)]
         if self._use_transition_bias:
-            self._state_transition_biases = [self.add_variable("state_transition_bias_%d" % i,
+            self._st_biases = [self.add_variable("st_bias_%d" % i,
                                                                shape=[self._num_units,],
                                                                initializer=self._transition_bias_initializer,
                                                                trainable=True) for i in range(self._transition_num_layers)]
         else:
-            self._state_transition_biases = None
+            self._st_biases = None
 
         self.built = True
 
@@ -163,9 +163,9 @@ class StateTransitionLSTMCell(rnn_cell_impl.LayerRNNCell):
 
         def transition(inputs, l):
             """Transform the hidden state via a fully-connected transition layer."""
-            outputs = math_ops.matmul(inputs, self._state_transition_kernels[l])
+            outputs = math_ops.matmul(inputs, self._st_kernels[l])
             if self._use_transition_bias:
-                outputs = nn_ops.bias_add(outputs, self._state_transition_biases[l])
+                outputs = nn_ops.bias_add(outputs, self._st_biases[l])
             if self._transition_activation is not None:
                 outputs = self._transition_activation(outputs)
             return outputs
