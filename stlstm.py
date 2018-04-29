@@ -19,6 +19,8 @@ _BIAS_VARIABLE_NAME = "bias"
 _WEIGHTS_VARIABLE_NAME = "kernel"
 
 class STLSTMCell(rnn_cell_impl.LayerRNNCell):
+    _st_kernels=None
+    _st_biases=None
     """State transition LSTM, built on top of BasicLSTMCell"""
     def __init__(self, num_units, forget_bias=1.0, st_activation=None,
                  use_st_bias=True, st_kernel_initializer=None,
@@ -107,16 +109,20 @@ class STLSTMCell(rnn_cell_impl.LayerRNNCell):
             shape=[4 * self._num_units],
             initializer=init_ops.zeros_initializer(dtype=self.dtype))
 
-        self._st_kernels = [self.add_variable("st_kernel_%d" % i,
-                                              shape=[self._num_units, self._num_units],
-                                              initializer=self._st_kernel_initializer,
-                                              trainable=True) for i in range(self._st_num_layers)]
-        if self._use_st_bias:
-            self._st_biases = [self.add_variable("st_bias_%d" % i,
-                                                 shape=[self._num_units,],
-                                                 initializer=self._st_bias_initializer,
-                                                 trainable=True) for i in range(self._st_num_layers)]
+        if self._st_num_layers > 0:
+            self._st_kernels = [self.add_variable("st_kernel_%d" % i,
+                                                  shape=[self._num_units, self._num_units],
+                                                  initializer=self._st_kernel_initializer,
+                                                  trainable=True) for i in range(self._st_num_layers)]
+            if self._use_st_bias:
+                self._st_biases = [self.add_variable("st_bias_%d" % i,
+                                                     shape=[self._num_units,],
+                                                     initializer=self._st_bias_initializer,
+                                                     trainable=True) for i in range(self._st_num_layers)]
+            else:
+                self._st_biases = None
         else:
+            self._st_kernels = None
             self._st_biases = None
 
         self.built = True

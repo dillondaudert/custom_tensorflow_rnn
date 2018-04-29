@@ -17,7 +17,15 @@ class STLSTMTest(test.TestCase):
         inputs_shape=[2,8]
         st_kernel_initializer=init_ops.identity_initializer()
 
-        with self.test_session() as sess:
+        # NOTE: test building with num_layers=0
+        with self.test_session():
+            cell = stlstm.STLSTMCell(num_units,
+                                     st_num_layers=0)
+
+            self.assertIsNone(cell._st_kernels)
+            self.assertIsNone(cell._st_biases)
+
+        with self.test_session():
             cell = stlstm.STLSTMCell(num_units,
                                      st_kernel_initializer=st_kernel_initializer,
                                      st_num_layers=num_layers)
