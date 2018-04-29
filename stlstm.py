@@ -47,9 +47,6 @@ class StateTransitionLSTMCell(rnn_cell_impl.LayerRNNCell):
       name: String, the name of the layer. Layers with the same name will
         share weights, but to avoid mistakes we require reuse=True in such
         cases.
-
-      When restoring from CudnnLSTM-trained checkpoints, must use
-      `CudnnCompatibleLSTMCell` instead.
     """
     super(StateTransitionLSTMCell, self).__init__(_reuse=reuse, name=name)
     if not state_is_tuple:
@@ -102,7 +99,7 @@ class StateTransitionLSTMCell(rnn_cell_impl.LayerRNNCell):
     self.built = True
 
   def call(self, inputs, state):
-    """Long short-term memory cell (LSTM).
+    """State transition long short-term memory cell (STLSTM).
 
     Args:
       inputs: `2-D` tensor with shape `[batch_size, input_size]`.
